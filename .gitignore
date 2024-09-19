@@ -1,0 +1,79 @@
+# Ignore all files by default, but scan all directories.
+
+!*/
+
+# Do not ignore git files in the root of the repo.
+!.git*
+# Ignore plugin git folders
+/Plugins/**/.git
+
+# Do not ignore source, config and plugins dirs.
+/Saved
+Intermediate
+/DerivedDataCache
+Binaries
+
+# Only allow .uasset and .umap files from /Content dir.
+# They're tracked by git-lfs, don't forget to track other
+# files if adding them here.
+!Content/**/*.uasset
+!Content/**/*.umap
+
+# Allow any files from /RawContent dir.
+# Any file in /RawContent dir will be managed by git lfs.
+!RawContent/**/*
+
+# Ignore plugin libs 
+/Plugins/**/*.png
+/Plugins/**/*.lib
+/Plugins/**/*.a
+/Plugins/**/*.zip
+/Plugins/**/*.exe
+
+!/Plugins/**/ThirdParty/**/*.lib
+# Individual file ignore
+pakchunklayers.txt
+CookerOpenOrder.log
+EditorOpenOrder.log
+PostStageHook.ps1
+
+# OS/platform generated files.
+CMakeLists.txt
+/*.sln
+/cmake-build-debug
+.idea
+.vsconfig
+
+# Windows
+ehthumbs.db
+Thumbs.db
+
+# Mac OS X
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+*.xcworkspace
+
+# Linux
+*~
+.directory
+
+# vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+
+# Visual Studio
+.vs
+*.bak
+*.DotSettings.user
+/Releases
+
+# ue4cli
+/dist
+
+/Plugins

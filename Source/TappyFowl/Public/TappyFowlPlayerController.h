@@ -81,7 +81,10 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSaveGameSet, UTappyFowlSaveGame*, SaveGame);
 	UPROPERTY(BlueprintAssignable, Category="TappyFowl")
 	FOnSaveGameSet OnSaveGameSet;
-	
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLoggedIn, FString, Address);
+	UPROPERTY(BlueprintAssignable, Category="TappyFowl")
+	FOnLoggedIn OnLoggedIn;
 protected:
 	bool AutoSignIn();
 	bool CreateSmartWallet();

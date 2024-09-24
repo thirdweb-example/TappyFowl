@@ -45,4 +45,5 @@ public:
 	FText GetDisplayAddress() const;
 
 	static ULeaderboardEntryViewModel* FromJson(UObject* WorldContextObject, const TSharedPtr<FJsonValue>& JsonValue);
+	static TArray<ULeaderboardEntryViewModel*> FromJson(UObject* WorldContextObject, const TArray<TSharedPtr<FJsonValue>>& JsonValueArray);
 };

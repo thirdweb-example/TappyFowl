@@ -20,7 +20,8 @@ public class TappyFowl : ModuleRules
 			"ModelViewViewModel",
 			"Json",
 			"HTTP",
-			"Paper2D"
+			"Paper2D",
+			"DeveloperSettings"
 		});
 
 		// PrivateDependencyModuleNames.Add("Thirdweb");

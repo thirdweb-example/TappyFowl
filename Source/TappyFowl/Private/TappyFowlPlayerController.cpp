@@ -3,7 +3,6 @@
 #include "TappyFowlPlayerController.h"
 
 #include "CharacterDataAsset.h"
-#include "HttpModule.h"
 #include "TappyFowl.h"
 #include "TappyFowlAssetManager.h"
 #include "TappyFowlSaveGame.h"
@@ -56,17 +55,11 @@ void ATappyFowlPlayerController::UnlockCharacter(const UCharacterDataAsset* NewC
 		UE_LOG(LogPlayerController, Error, TEXT("TappyFowlPlayerController::UnlockCharacter::Insufficient Funds"))
 		return;
 	}
-	FHttpModule& HttpModule = FHttpModule::Get();
-	const TSharedRef<IHttpRequest> Request = HttpModule.CreateRequest();
-	Request->SetVerb("POST");
-	Request->SetURL("https://thirdweb-example-tappyfowl-api-9rgm.zeet-nftlabs.zeet.app/421614/purchase");
-	Request->SetHeader("Content-Type", "application/json");
-	Request->SetHeader("Authorization", "e5447b62-09ed-44db-a843-904a5e387041");
-
 	const TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 	JsonObject->SetStringField(TEXT("account"), SmartWallet.ToAddress());
 	JsonObject->SetNumberField(TEXT("id"), NewCharacter->Id);
-	Request->SetContentAsString(TappyFowl::Json::JsonObjectToString(JsonObject));
+
+	const TSharedRef<IHttpRequest> Request = TappyFowl::HTTP::Post(TEXT("/purchase"), JsonObject);
 	Request->OnProcessRequestComplete().BindWeakLambda(this, [&, NewCharacter](const FHttpRequestPtr&, const FHttpResponsePtr&, const bool bWasSuccessful)
 	{
 		if (bWasSuccessful)
@@ -206,7 +199,8 @@ bool ATappyFowlPlayerController::CreateSmartWallet()
 			if (FString Error; !SmartWallet.GetActiveSigners(Signers, Error))
 			{
 				UE_LOG(LogPlayerController, Error, TEXT("ATappyFowlPlayerController::BeginPlay::%s"), *Error);
-			} else
+			}
+			else
 			{
 				for (FSigner& Signer : Signers)
 				{
@@ -219,17 +213,19 @@ bool ATappyFowlPlayerController::CreateSmartWallet()
 		}
 		if (!bDeployed || !bIsActiveSigner || !InAppWallet.IsConnected())
 		{
-			UE_LOG(LogPlayerController, Log, TEXT("TappyFowlPlayerController::CreateSmartWallet::%s Smart Wallet"), bDeployed ?  bIsActiveSigner ? TEXT("Connecting") : TEXT("Enabling") : TEXT("Deploying"));
+			UE_LOG(LogPlayerController, Log, TEXT("TappyFowlPlayerController::CreateSmartWallet::%s Smart Wallet"),
+			       bDeployed ? bIsActiveSigner ? TEXT("Connecting") : TEXT("Enabling") : TEXT("Deploying"));
 			FDateTime Mv = FDateTime::MinValue();
 			FString TxHash;
 			if (FString Error; !SmartWallet.CreateSessionKey(EngineSigner, {}, TEXT("0"), Mv, Mv, Mv, Mv, TxHash, Error))
 			{
-				UE_LOG(LogPlayerController, Error, TEXT("ATappyFowlPlayerController::BeginPlay::%s"), *Error);
+				UE_LOG(LogPlayerController, Error, TEXT("TappyFowlPlayerController::BeginPlay::%s"), *Error);
 				return false;
 			}
 			UE_LOG(LogPlayerController, Log, TEXT("TappyFowlPlayerController::CreateSmartWallet::Smart Wallet Session Key Created - TX: %s"), *TxHash);
 		}
 		else UE_LOG(LogPlayerController, Log, TEXT("TappyFowlPlayerController::CreateSmartWallet::Smart Wallet Deployed"));
+		OnLoggedIn.Broadcast(SmartWallet.ToAddress());
 	}
 	else UE_LOG(LogPlayerController, Error, TEXT("TappyFowlPlayerController::CreateSmartWallet::In App Wallet Invalid"));
 	FetchBalances();
@@ -243,18 +239,14 @@ void ATappyFowlPlayerController::FetchBalances()
 		return;
 	}
 	FHttpModule& HttpModule = FHttpModule::Get();
-	const TSharedRef<IHttpRequest> Request = HttpModule.CreateRequest();
-	Request->SetVerb(TEXT("GET"));
-	Request->SetURL(TEXT("https://thirdweb-example-tappyfowl-api-9rgm.zeet-nftlabs.zeet.app/421614/") + SmartWallet.ToAddress() + TEXT("/balances"));
-	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-
+	const TSharedRef<IHttpRequest> Request = TappyFowl::HTTP::Get(FString::Format(TEXT("/{0}/balances"), {SmartWallet.ToAddress()}));
 	Request->OnProcessRequestComplete().BindWeakLambda(this, [&](const FHttpRequestPtr&, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{
 		if (bWasSuccessful)
 		{
 			UE_LOG(LogPlayerController, Log, TEXT("TappyFowlPlayerController::FetchBalances::%s"), *Response->GetContentAsString())
 			UPlayerViewModel* PlayerViewModel = GetGlobalViewModel<UPlayerViewModel>(this);
-			const TSharedPtr<FJsonObject> JsonObject = TappyFowl::Json::StringToJsonObject(Response->GetContentAsString());
+			const TSharedPtr<FJsonObject> JsonObject = TappyFowl::JSON::StringToJsonObject(Response->GetContentAsString());
 			if (JsonObject->HasTypedField<EJson::String>(TEXT("tokens")))
 			{
 				SaveGame->SaveCoins(FCString::Atoi(*JsonObject->GetStringField(TEXT("tokens"))));

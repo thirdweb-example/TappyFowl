@@ -3,6 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ThirdwebWalletHandle.h"
+
+#include "Engine/StreamableManager.h"
+
 #include "GameFramework/GameMode.h"
 #include "TappyFowlGameMode.generated.h"
 
@@ -23,10 +27,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 Coins = 0;
 
-	UFUNCTION(BlueprintCallable, Category="TappyFowl")
-	void SendGameResults(const ATappyFowlPlayerController* PlayerController);
-
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnResultsSent();
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString WalletAddress;
 };

@@ -7,6 +7,9 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#include "ViewModels/PlayerViewModel.h"
+#include "ViewModels/ViewModelMacros.h"
+
 const TCHAR* UTappyFowlSaveGame::SlotName = TEXT("PlayerSaveGame");
 
 UTappyFowlSaveGame::UTappyFowlSaveGame()
@@ -137,6 +140,7 @@ void UTappyFowlSaveGame::SaveGameResults(const int32 NewHighScore, const int32 N
 	}
 	if (bDirty)
 	{
+		UpdateViewModel(this);
 		AsyncSaveGameToSlotForLocalPlayer();
 	}
 }
@@ -158,5 +162,53 @@ void UTappyFowlSaveGame::DeleteSaveGame(const APlayerController* PlayerControlle
 	else
 	{
 		UGameplayStatics::DeleteGameInSlot(SlotName, LocalPlayer->GetPlatformUserIndex());
+	}
+}
+
+void UTappyFowlSaveGame::SaveGameResult(const UObject* WorldContextObject, const int32 NewHighScore, const int32 NewCoins)
+{
+	if (constexpr int32 UserIndex = 0; UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+	{
+		if (UTappyFowlSaveGame* SaveGame = Cast<UTappyFowlSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex)))
+		{
+			bool bDirty = false;
+			if (NewHighScore > SaveGame->HighScore)
+			{
+				SaveGame->HighScore = NewHighScore;
+				bDirty = true;
+			}
+			if (NewCoins > 0)
+			{
+				SaveGame->Coins = SaveGame->Coins + NewCoins;
+				bDirty = true;
+			}
+			if (bDirty)
+			{
+				UGameplayStatics::SaveGameToSlot(SaveGame, SlotName, UserIndex);
+				SaveGame->UpdateViewModel(WorldContextObject);
+			}
+		}
+	}
+}
+
+bool UTappyFowlSaveGame::AsyncSaveGameToSlotForLocalPlayer()
+{
+	bool bSuccess = Super::AsyncSaveGameToSlotForLocalPlayer();
+	UpdateViewModel(GetLocalPlayer());
+	return bSuccess;
+}
+
+bool UTappyFowlSaveGame::SaveGameToSlotForLocalPlayer()
+{
+	bool bSuccess = Super::SaveGameToSlotForLocalPlayer();
+	UpdateViewModel(GetLocalPlayer());
+	return bSuccess;
+}
+
+void UTappyFowlSaveGame::UpdateViewModel(const UObject* WorldContextObject)
+{
+	if (UPlayerViewModel* PlayerViewModel = GetGlobalViewModel<UPlayerViewModel>(WorldContextObject))
+	{
+		PlayerViewModel->SetSaveGame(this);
 	}
 }

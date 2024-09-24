@@ -2,7 +2,6 @@
 
 #include "TappyFowlGameInstance.h"
 
-#include "HttpModule.h"
 #include "TappyFowl.h"
 #include "TappyFowlAssetManager.h"
 #include "TappyFowlSaveGame.h"
@@ -31,31 +30,18 @@ UTappyFowlGameInstance* UTappyFowlGameInstance::Get(const UObject* WorldContextO
 
 void UTappyFowlGameInstance::GetHighScores()
 {
-	FHttpModule& HttpModule = FHttpModule::Get();
-	const TSharedRef<IHttpRequest> Request = HttpModule.CreateRequest();
-	Request->SetVerb("GET");
-	Request->SetURL("https://thirdweb-example-tappyfowl-api-9rgm.zeet-nftlabs.zeet.app/421614/high-scores");
-	Request->SetHeader("Content-Type", "application/json");
+	const TSharedRef<IHttpRequest> Request = TappyFowl::HTTP::Get(TEXT("/high-scores"));
 	Request->OnProcessRequestComplete().BindWeakLambda(this, [&](const FHttpRequestPtr&, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{
 		if (bWasSuccessful)
 		{
 			// ReSharper disable once CppTooWideScopeInitStatement
-			const TSharedPtr<FJsonObject>& Json = TappyFowl::Json::StringToJsonObject(Response->GetContentAsString());
+			const TSharedPtr<FJsonObject>& Json = TappyFowl::JSON::StringToJsonObject(Response->GetContentAsString());
 			if (Json->HasTypedField<EJson::Array>(TEXT("result")))
 			{
-				TArray<TSharedPtr<FJsonValue>> Results = Json->GetArrayField(TEXT("result"));
-				TArray<ULeaderboardEntryViewModel*> LeaderboardEntryViewModels;
-				for (int32 i = 0; i < Results.Num(); i++)
-				{
-					if (ULeaderboardEntryViewModel* LeaderboardEntryViewModel = ULeaderboardEntryViewModel::FromJson(this, Results[i]))
-					{
-						LeaderboardEntryViewModels.Emplace(LeaderboardEntryViewModel);
-					}
-				}
 				if (UPlayerViewModel* PlayerViewModel = GetGlobalViewModel<UPlayerViewModel>(this))
 				{
-					PlayerViewModel->SetLeaderboardEntryViewModels(LeaderboardEntryViewModels);
+					PlayerViewModel->SetLeaderboardEntryViewModels(ULeaderboardEntryViewModel::FromJson(this, Json->GetArrayField(TEXT("result"))));
 				}
 			}
 		} else

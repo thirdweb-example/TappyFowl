@@ -17,6 +17,8 @@ class TAPPYFOWL_API UTappyFowlSaveGame : public ULocalPlayerSaveGame
 
 public:
 	UTappyFowlSaveGame();
+
+	static const TCHAR* SlotName;
 	
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -87,6 +89,10 @@ public:
 
 	static void DeleteSaveGame(const APlayerController* PlayerController);
 
+	static void SaveGameResult(const UObject* WorldContextObject, const int32 NewHighScore, const int32 NewCoins);
+
+	virtual bool AsyncSaveGameToSlotForLocalPlayer() override;
+	virtual bool SaveGameToSlotForLocalPlayer() override;
 private:
-	static const TCHAR* SlotName;
+	void UpdateViewModel(const UObject* WorldContextObject);
 };

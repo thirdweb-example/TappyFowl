@@ -42,3 +42,16 @@ ULeaderboardEntryViewModel* ULeaderboardEntryViewModel::FromJson(UObject* WorldC
 	}
 	return nullptr;
 }
+
+TArray<ULeaderboardEntryViewModel*> ULeaderboardEntryViewModel::FromJson(UObject* WorldContextObject, const TArray<TSharedPtr<FJsonValue>>& JsonValueArray)
+{
+	TArray<ULeaderboardEntryViewModel*> LeaderboardEntryViewModels;
+	for (int32 i = 0; i < JsonValueArray.Num(); i++)
+	{
+		if (ULeaderboardEntryViewModel* LeaderboardEntryViewModel = FromJson(WorldContextObject, JsonValueArray[i]))
+		{
+			LeaderboardEntryViewModels.Emplace(LeaderboardEntryViewModel);
+		}
+	}
+	return LeaderboardEntryViewModels;
+}

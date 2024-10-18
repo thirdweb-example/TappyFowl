@@ -60,3 +60,21 @@ void UTappyFowlGameInstance::StartMusic(USoundBase* InMusic)
 		UGameplayStatics::PlaySound2D(this, Music);
 	}
 }
+
+void UTappyFowlGameInstance::SetInAppWallet(const FInAppWalletHandle& NewInAppWallet)
+{
+	InAppWallet = NewInAppWallet;
+	if (InAppWallet.IsValid())
+	{
+		InAppWallet.CacheAddress();
+	}
+}
+
+void UTappyFowlGameInstance::SetSmartWallet(const FSmartWalletHandle& NewSmartWallet)
+{
+	SmartWallet = NewSmartWallet;
+	if (SmartWallet.IsValid())
+	{
+		SmartWallet.CacheAddress();
+	}
+}

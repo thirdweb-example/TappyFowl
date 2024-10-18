@@ -3,6 +3,10 @@
 #pragma once
 
 #include "Kismet/BlueprintPlatformLibrary.h"
+
+#include "Wallets/ThirdwebInAppWalletHandle.h"
+#include "Wallets/ThirdwebSmartWalletHandle.h"
+
 #include "TappyFowlGameInstance.generated.h"
 
 class UTappyFowlSaveGame;
@@ -24,8 +28,19 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintCosmetic, Category=Audio, meta=(BlueprintCosmetic, UnsafeDuringActorConstruction))
 	void StartMusic(USoundBase* InMusic);
-	
+
+	FInAppWalletHandle GetInAppWallet() const { return InAppWallet; }
+	void SetInAppWallet(const FInAppWalletHandle& NewInAppWallet);
+	FSmartWalletHandle GetSmartWallet() const { return SmartWallet; }
+	void SetSmartWallet(const FSmartWalletHandle& NewSmartWallet);
+
 protected:
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=Persistant)
+	FInAppWalletHandle InAppWallet;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=Persistant)
+	FSmartWalletHandle SmartWallet;
+	
 	UPROPERTY(Transient)
 	FTimerHandle BackgroundFetchHandle;
 

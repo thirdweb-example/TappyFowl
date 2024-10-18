@@ -3,9 +3,11 @@
 #pragma once
 
 #include "ThirdwebCommon.h"
-#include "ThirdwebWalletHandle.h"
 
 #include "GameFramework/PlayerController.h"
+
+#include "Wallets/ThirdwebInAppWalletHandle.h"
+#include "Wallets/ThirdwebSmartWalletHandle.h"
 
 #include "TappyFowlPlayerController.generated.h"
 
@@ -25,19 +27,16 @@ public:
 protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=Settings)
 	TObjectPtr<UTappyFowlSaveGame> SaveGame;
-	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=Settings)
-	FWalletHandle InAppWallet;
-
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=Settings)
-	FWalletHandle SmartWallet;
 
 public:
 	UFUNCTION(BlueprintPure, Category="TappyFowl")
-	FWalletHandle GetInAppWallet() const { return InAppWallet; }
+	FInAppWalletHandle GetInAppWallet() const;
+
+	UFUNCTION(BlueprintPure, Category="TappyFowl")
+	TArray<EThirdwebOAuthProvider> GetLinkedOAuthProviders() const;
 	
 	UFUNCTION(BlueprintPure, Category="TappyFowl")
-    FWalletHandle GetSmartWallet() const { return SmartWallet; }
+    FSmartWalletHandle GetSmartWallet() const;
 
 	UFUNCTION(BlueprintPure, Category="TappyFowl")
 	UTappyFowlSaveGame* GetSaveGame() const { return SaveGame.Get(); }
@@ -76,7 +75,7 @@ public:
 	bool HasCharacter(const UCharacterDataAsset* InCharacter) const;
 
 	UFUNCTION(BlueprintCallable, Category="TappyFowl")
-	FWalletHandle SetInAppWallet(const FWalletHandle& Wallet, const EThirdwebOAuthProvider Provider);
+	FInAppWalletHandle SetInAppWallet(const FInAppWalletHandle& Wallet);
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSaveGameSet, UTappyFowlSaveGame*, SaveGame);
 	UPROPERTY(BlueprintAssignable, Category="TappyFowl")
@@ -88,5 +87,12 @@ public:
 protected:
 	bool AutoSignIn();
 	bool CreateSmartWallet();
+	void CreateSessionKey(const FString& EngineSigner);
 	void FetchBalances();
+
+	void HandleInAppWalletCreated(const FInAppWalletHandle& Wallet);
+	void HandleSmartWalletCreated(const FSmartWalletHandle& Wallet);
+	void HandleSmartWalletIsDeployed(const bool& bIsDeployed);
+	void HandleSessionKeyCreated(const FString& TxHash);
+	void HandleFetchLinkedAccounts(const TArray<FThirdwebLinkedAccount>& LinkedAccounts);
 };

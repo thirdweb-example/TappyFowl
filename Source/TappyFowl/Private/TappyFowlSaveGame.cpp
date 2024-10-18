@@ -2,6 +2,8 @@
 
 #include "TappyFowlSaveGame.h"
 
+#include <Containers/ThirdwebLinkedAccount.h>
+
 #include "CharacterDataAsset.h"
 #include "TappyFowlAssetManager.h"
 
@@ -16,9 +18,6 @@ UTappyFowlSaveGame::UTappyFowlSaveGame()
 {
 	Coins = 0;
 	HighScore = 0;
-	bLoggedIn = false;
-	OAuthProvider = EThirdwebOAuthProvider::Google;
-	Email = TEXT("");
 	SelectedCharacterId = -1;
 	OwnedCharacterIds = {-1};
 }
@@ -33,19 +32,9 @@ int32 UTappyFowlSaveGame::GetHighScore() const
 	return HighScore;
 }
 
-bool UTappyFowlSaveGame::IsLoggedIn() const
+TArray<FThirdwebLinkedAccount> UTappyFowlSaveGame::GetLinkedAccounts() const
 {
-	return bLoggedIn;
-}
-
-EThirdwebOAuthProvider UTappyFowlSaveGame::GetOAuthProvider() const
-{
-	return OAuthProvider;
-}
-
-FString UTappyFowlSaveGame::GetEmail() const
-{
-	return Email;
+	return LinkedAccounts;
 }
 
 TArray<UCharacterDataAsset*> UTappyFowlSaveGame::GetOwnedCharacters() const
@@ -65,7 +54,7 @@ UCharacterDataAsset* UTappyFowlSaveGame::GetSelectedCharacter() const
 
 void UTappyFowlSaveGame::SaveHighScore(const int32 NewHighScore)
 {
-	if (NewHighScore > HighScore)
+	if (NewHighScore != HighScore && (NewHighScore > HighScore || NewHighScore == 0))
 	{
 		HighScore = NewHighScore;
 		AsyncSaveGameToSlotForLocalPlayer();
@@ -74,22 +63,11 @@ void UTappyFowlSaveGame::SaveHighScore(const int32 NewHighScore)
 
 void UTappyFowlSaveGame::SaveCoins(const int32 NewCoins)
 {
-	Coins = NewCoins;
-	AsyncSaveGameToSlotForLocalPlayer();
-}
-
-void UTappyFowlSaveGame::SaveAuthProvider(const EThirdwebOAuthProvider Provider)
-{
-	OAuthProvider = Provider;
-	bLoggedIn = true;
-	AsyncSaveGameToSlotForLocalPlayer();
-}
-
-void UTappyFowlSaveGame::SaveEmail(const FString& NewEmail)
-{
-	Email = NewEmail;
-	bLoggedIn = true;
-	AsyncSaveGameToSlotForLocalPlayer();
+	if (NewCoins != Coins)
+	{
+		Coins = NewCoins;
+		AsyncSaveGameToSlotForLocalPlayer();
+	}
 }
 
 void UTappyFowlSaveGame::SaveSelectedCharacter(const UCharacterDataAsset* NewCharacter)
@@ -125,6 +103,25 @@ void UTappyFowlSaveGame::AddOwnedCharacter(const UCharacterDataAsset* NewCharact
 	}
 }
 
+void UTappyFowlSaveGame::SaveLinkedAccounts(const TArray<FThirdwebLinkedAccount>& NewLinkedAccounts)
+{
+	LinkedAccounts = NewLinkedAccounts;
+	AsyncSaveGameToSlotForLocalPlayer();
+}
+
+void UTappyFowlSaveGame::AddLinkedAccount(const FThirdwebLinkedAccount& NewLinkedAccount)
+{
+	for (const FThirdwebLinkedAccount& LinkedAccount : LinkedAccounts)
+	{
+		if (LinkedAccount.Id == NewLinkedAccount.Id)
+		{
+			return;
+		}
+	}
+	LinkedAccounts.Emplace(NewLinkedAccount);
+	AsyncSaveGameToSlotForLocalPlayer();
+}
+
 void UTappyFowlSaveGame::SaveGameResults(const int32 NewHighScore, const int32 NewCoins)
 {
 	bool bDirty = false;
@@ -140,7 +137,6 @@ void UTappyFowlSaveGame::SaveGameResults(const int32 NewHighScore, const int32 N
 	}
 	if (bDirty)
 	{
-		UpdateViewModel(this);
 		AsyncSaveGameToSlotForLocalPlayer();
 	}
 }

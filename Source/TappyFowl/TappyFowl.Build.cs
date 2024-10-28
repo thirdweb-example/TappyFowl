@@ -15,6 +15,7 @@ public class TappyFowl : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
+			"EngineSettings",
 			"InputCore", 
 			"Thirdweb",
 			"ModelViewViewModel",
@@ -23,8 +24,5 @@ public class TappyFowl : ModuleRules
 			"Paper2D",
 			"DeveloperSettings"
 		});
-
-		// PrivateDependencyModuleNames.Add("Thirdweb");
-		
 	}
 }

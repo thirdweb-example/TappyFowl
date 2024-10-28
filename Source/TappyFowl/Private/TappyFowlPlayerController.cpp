@@ -65,6 +65,27 @@ TArray<EThirdwebOAuthProvider> ATappyFowlPlayerController::GetLinkedOAuthProvide
 	return LinkedOAuthProviders;
 }
 
+void ATappyFowlPlayerController::GetLinkedOTPProviders(bool& bEmail, bool& bPhone) const
+{
+	bEmail = bPhone = false;
+	if (SaveGame)
+	{
+		// ReSharper disable once CppTooWideScopeInitStatement
+		const TArray<FThirdwebLinkedAccount> LinkedAccounts = SaveGame->GetLinkedAccounts();
+		for (const FThirdwebLinkedAccount& LinkedAccount : LinkedAccounts)
+		{
+			if (LinkedAccount.Type.Equals("Email", ESearchCase::IgnoreCase))
+			{
+				bEmail = true;
+			}
+			else if (LinkedAccount.Type.Equals("Phone", ESearchCase::IgnoreCase))
+			{
+				bPhone = true;
+			}
+		}
+	}
+}
+
 FSmartWalletHandle ATappyFowlPlayerController::GetSmartWallet() const
 {
 	if (UTappyFowlGameInstance* GameInstance = UTappyFowlGameInstance::Get(this))
@@ -84,6 +105,12 @@ void ATappyFowlPlayerController::SignOut()
 {
 	UTappyFowlSaveGame::DeleteSaveGame(this);
 	SaveGame = nullptr;
+}
+
+void ATappyFowlPlayerController::SwitchAccounts(const FInAppWalletHandle& Wallet, const FString& AuthInput)
+{
+	SaveGame->SaveWalletAuth(Wallet, AuthInput);
+	UTappyFowlGameInstance::Get(this)->Reset();
 }
 
 void ATappyFowlPlayerController::UnlockCharacter(const UCharacterDataAsset* NewCharacter)
@@ -164,6 +191,13 @@ void ATappyFowlPlayerController::AddCoins(const int32 NewCoins)
 	SaveGame->SaveCoins(SaveGame->GetCoins() + NewCoins);
 }
 
+void ATappyFowlPlayerController::FetchLinkedWallets()
+{
+	GetInAppWallet().GetLinkedAccounts(
+		FInAppWalletHandle::FGetLinkedAccountsDelegate::CreateUObject(this, &ATappyFowlPlayerController::HandleFetchLinkedAccounts),
+		CREATE_ERROR_DELEGATE(TEXT("FetchLinkedWallets")));
+}
+
 bool ATappyFowlPlayerController::HasCharacter(const UCharacterDataAsset* InCharacter) const
 {
 	if (!InCharacter)
@@ -198,12 +232,40 @@ bool ATappyFowlPlayerController::AutoSignIn()
 	UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::AutoSignIn::Called"))
 	if (!GetInAppWallet().IsValid())
 	{
-		FInAppWalletHandle::CreateEcosystemGuestWallet(
-			TEXT(""),
-			FInAppWalletHandle::FCreateInAppWalletDelegate::CreateUObject(this, &ThisClass::HandleInAppWalletCreated),
-			CREATE_ERROR_DELEGATE(TEXT("AutoSignIn"))
-		);
-	} else UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::AutoSignIn::Guest Wallet Already Exists"));
+		if (SaveGame->IsGuestAuth())
+		{
+			FInAppWalletHandle::CreateEcosystemGuestWallet(
+				TEXT(""),
+				FInAppWalletHandle::FCreateInAppWalletDelegate::CreateUObject(this, &ThisClass::HandleInAppWalletCreated),
+				CREATE_ERROR_DELEGATE(TEXT("AutoSignIn"))
+			);
+		}
+		else if (SaveGame->IsOAuth())
+		{
+			FInAppWalletHandle::CreateOAuthWallet(
+				SaveGame->GetOAuthProvider(),
+				FInAppWalletHandle::FCreateInAppWalletDelegate::CreateUObject(this, &ThisClass::HandleInAppWalletCreated),
+				CREATE_ERROR_DELEGATE(TEXT("AutoSignIn"))
+			);
+		}
+		else if (SaveGame->IsEmail())
+		{
+			FInAppWalletHandle::CreateEmailWallet(
+				SaveGame->GetAuthInput(),
+				FInAppWalletHandle::FCreateInAppWalletDelegate::CreateUObject(this, &ThisClass::HandleInAppWalletCreated),
+				CREATE_ERROR_DELEGATE(TEXT("AutoSignIn"))
+			);
+		}
+		else if (SaveGame->IsPhone())
+		{
+			FInAppWalletHandle::CreatePhoneWallet(
+				SaveGame->GetAuthInput(),
+				FInAppWalletHandle::FCreateInAppWalletDelegate::CreateUObject(this, &ThisClass::HandleInAppWalletCreated),
+				CREATE_ERROR_DELEGATE(TEXT("AutoSignIn"))
+			);
+		}
+	}
+	else UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::AutoSignIn::Guest Wallet Already Exists"));
 	return true;
 }
 
@@ -340,17 +402,32 @@ void ATappyFowlPlayerController::HandleInAppWalletCreated(const FInAppWalletHand
 	UTappyFowlGameInstance::Get(this)->SetInAppWallet(Wallet);
 	UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::HandleInAppWalletCreated::Wallet=%s-%lld"), GetInAppWallet().GetSourceString(), GetInAppWallet().GetID())
 	FInAppWalletHandle Handle = GetInAppWallet();
-	Handle.SignInWithGuest(
-		FStreamableDelegate::CreateWeakLambda(this, [this, Handle]()
+	if (SaveGame->IsGuestAuth())
+	{
+		if (!Handle.IsConnected())
 		{
-			UTappyFowlGameInstance::Get(this)->SetInAppWallet(Handle);
-			UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::AutoSignIn::Signed In with Guest"))
-			GetInAppWallet().GetLinkedAccounts(
-	FInAppWalletHandle::FGetLinkedAccountsDelegate::CreateUObject(this, &ATappyFowlPlayerController::HandleFetchLinkedAccounts),
-	CREATE_ERROR_DELEGATE(TEXT("HandleSessionKeyCreated")));
-			CreateSmartWallet();
-		}), CREATE_ERROR_DELEGATE(TEXT("HandleInAppWalletCreated::SignInWithGuest"))
-	);
+			Handle.SignInWithGuest(
+				FStreamableDelegate::CreateWeakLambda(this, [this, Handle]()
+				{
+					UTappyFowlGameInstance::Get(this)->SetInAppWallet(Handle);
+					UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::AutoSignIn::Signed In with Guest"))
+					FetchLinkedWallets();
+					CreateSmartWallet();
+				}), CREATE_ERROR_DELEGATE(TEXT("HandleInAppWalletCreated::SignInWithGuest"))
+			);
+			return;
+		}
+	}
+	if (Handle.IsConnected())
+	{
+		UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::AutoSignIn::Resumed %s connection"), Handle.GetSourceString())
+		FetchLinkedWallets();
+		CreateSmartWallet();
+	}
+	else
+	{
+		UE_LOG(LogPlayerController, Error, TEXT("ATappyFowlPlayerController::AutoSignIn::Could not resume %s connection"), Handle.GetSourceString())
+	}
 }
 
 void ATappyFowlPlayerController::HandleSmartWalletCreated(const FSmartWalletHandle& Wallet)
@@ -412,7 +489,8 @@ void ATappyFowlPlayerController::HandleSmartWalletIsDeployed(const bool& bIsDepl
 						break;
 					}
 				}
-				UE_LOG(LogPlayerController, Error, TEXT("ATappyFowlPlayerController::HandleSmartWalletIsDeployed::Signers=%s|IsActiveSigner=%s"), *UKismetStringLibrary::JoinStringArray(Addresses, TEXT("")), bIsActiveSigner ? TEXT("true") : TEXT("false"));
+				UE_LOG(LogPlayerController, Error, TEXT("ATappyFowlPlayerController::HandleSmartWalletIsDeployed::Signers=%s|IsActiveSigner=%s"),
+				       *UKismetStringLibrary::JoinStringArray(Addresses, TEXT("")), bIsActiveSigner ? TEXT("true") : TEXT("false"));
 				if (!bIsActiveSigner || !GetInAppWallet().IsConnected())
 				{
 					UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::CreateSmartWallet::%s Smart Wallet"), bIsActiveSigner ? TEXT("Connecting") : TEXT("Enabling"));
@@ -422,7 +500,8 @@ void ATappyFowlPlayerController::HandleSmartWalletIsDeployed(const bool& bIsDepl
 			}),
 			CREATE_ERROR_DELEGATE(TEXT("HandleSmartWalletIsDeployed"))
 		);
-	} else
+	}
+	else
 	{
 		UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::CreateSmartWallet::Deploying Smart Wallet"));
 		CreateSessionKey(EngineSigner);
@@ -445,7 +524,7 @@ void ATappyFowlPlayerController::HandleSessionKeyCreated(const FString& TxHash)
 	}
 	UE_LOG(LogPlayerController, Log, TEXT("ATappyFowlPlayerController::HandleSessionKeyCreated::TxHash=%s"), *TxHash);
 	UTappyFowlGameInstance::Get(this)->SetSmartWallet(UTappyFowlGameInstance::Get(this)->GetSmartWallet());
-	
+
 	OnLoggedIn.Broadcast(GetSmartWallet().ToAddress());
 	FetchBalances();
 }

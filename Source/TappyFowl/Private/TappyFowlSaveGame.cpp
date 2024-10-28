@@ -6,11 +6,14 @@
 
 #include "CharacterDataAsset.h"
 #include "TappyFowlAssetManager.h"
+#include "ThirdwebRuntimeSettings.h"
 
 #include "Kismet/GameplayStatics.h"
 
 #include "ViewModels/PlayerViewModel.h"
 #include "ViewModels/ViewModelMacros.h"
+
+#include "Wallets/ThirdwebInAppWalletHandle.h"
 
 const TCHAR* UTappyFowlSaveGame::SlotName = TEXT("PlayerSaveGame");
 
@@ -20,6 +23,8 @@ UTappyFowlSaveGame::UTappyFowlSaveGame()
 	HighScore = 0;
 	SelectedCharacterId = -1;
 	OwnedCharacterIds = {-1};
+	InAppWalletSource = 5;
+	OAuthProvider = EThirdwebOAuthProvider::None;
 }
 
 int32 UTappyFowlSaveGame::GetCoins() const
@@ -138,6 +143,25 @@ void UTappyFowlSaveGame::SaveGameResults(const int32 NewHighScore, const int32 N
 	if (bDirty)
 	{
 		AsyncSaveGameToSlotForLocalPlayer();
+	}
+}
+
+void UTappyFowlSaveGame::SaveWalletAuth(const FInAppWalletHandle& Wallet, const FString& Input)
+{
+	if (Wallet.IsValid())
+	{
+		InAppWalletSource = static_cast<int32>(Wallet.GetSource()) - 1;
+		if (Wallet.GetSource() == FInAppWalletHandle::Email || Wallet.GetSource() == FInAppWalletHandle::Phone)
+		{
+			AuthInput = Input;
+			OAuthProvider = EThirdwebOAuthProvider::None;
+		}
+		else
+		{
+			AuthInput = TEXT("");
+			OAuthProvider = Wallet.GetOAuthProvider();
+		}
+		SaveGameToSlotForLocalPlayer();
 	}
 }
 

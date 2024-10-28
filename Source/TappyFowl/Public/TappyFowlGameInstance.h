@@ -34,6 +34,7 @@ public:
 	FSmartWalletHandle GetSmartWallet() const { return SmartWallet; }
 	void SetSmartWallet(const FSmartWalletHandle& NewSmartWallet);
 
+	void Reset();
 protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category=Persistant)
 	FInAppWalletHandle InAppWallet;

@@ -34,6 +34,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category="TappyFowl")
 	TArray<EThirdwebOAuthProvider> GetLinkedOAuthProviders() const;
+
+	UFUNCTION(BlueprintPure, Category="TappyFowl")
+	void GetLinkedOTPProviders(bool& bEmail, bool& bPhone) const;
 	
 	UFUNCTION(BlueprintPure, Category="TappyFowl")
     FSmartWalletHandle GetSmartWallet() const;
@@ -47,6 +50,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="TappyFowl")
 	void SignOut();
 
+	UFUNCTION(BlueprintCallable, Category="TappyFowl")
+	void SwitchAccounts(const FInAppWalletHandle& Wallet, const FString& AuthInput);
+	
 	UFUNCTION(BlueprintCallable, Category="TappyFowl")
 	void UnlockCharacter(const UCharacterDataAsset* NewCharacter);
 
@@ -70,6 +76,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="TappyFowl")
 	void AddCoins(const int32 NewCoins);
+
+	UFUNCTION(BlueprintCallable, Category="TappyFowl")
+	void FetchLinkedWallets();
 	
 	UFUNCTION(BlueprintPure, Category="TappyFowl")
 	bool HasCharacter(const UCharacterDataAsset* InCharacter) const;

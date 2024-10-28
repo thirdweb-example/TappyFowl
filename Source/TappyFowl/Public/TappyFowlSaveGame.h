@@ -2,15 +2,16 @@
 
 #pragma once
 
+
 #include "GameFramework/SaveGame.h"
-#include "ThirdwebCommon.h"
+
 #include "TappyFowlSaveGame.generated.h"
 
+struct FInAppWalletHandle;
+enum class EThirdwebOAuthProvider : uint8;
 struct FThirdwebLinkedAccount;
 class UCharacterDataAsset;
-/**
- * 
- */
+
 UCLASS()
 class TAPPYFOWL_API UTappyFowlSaveGame : public ULocalPlayerSaveGame
 {
@@ -37,7 +38,15 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 SelectedCharacterId;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 InAppWalletSource;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	EThirdwebOAuthProvider OAuthProvider;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString AuthInput;
+	
 public:
 	UFUNCTION(BlueprintPure, Category="TappyFowl|SaveGame")
 	int32 GetCoins() const;
@@ -74,6 +83,16 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category="TappyFowl|SaveGame")
 	void SaveGameResults(const int32 NewHighScore, const int32 NewCoins);
+
+	UFUNCTION(BlueprintCallable, Category="TappyFowl|SaveGame")
+	void SaveWalletAuth(const FInAppWalletHandle& Wallet, const FString& Input);
+
+	bool IsGuestAuth() const { return InAppWalletSource == 5; }
+	bool IsOAuth() const { return InAppWalletSource == 0; }
+	bool IsEmail() const { return InAppWalletSource == 1; }
+	bool IsPhone() const { return InAppWalletSource == 2; }
+	EThirdwebOAuthProvider GetOAuthProvider() const { return OAuthProvider; }
+	FString GetAuthInput() const { return AuthInput; }
 	
 	static UTappyFowlSaveGame* LoadOrCreateSaveGame(APlayerController* PlayerController);
 

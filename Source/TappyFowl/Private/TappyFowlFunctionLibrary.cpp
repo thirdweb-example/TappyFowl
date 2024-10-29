@@ -30,7 +30,7 @@ bool UTappyFowlFunctionLibrary::OnlyNumeric(const FText& Input, FText& Output)
 {
 	TArray<FString> Characters = UKismetStringLibrary::GetCharacterArrayFromString(Input.ToString());
 	TArray<FString> Numeric;
-	for (const FString Character : Characters)
+	for (const FString& Character : Characters)
 	{
 		if (Character.IsNumeric())
 		{

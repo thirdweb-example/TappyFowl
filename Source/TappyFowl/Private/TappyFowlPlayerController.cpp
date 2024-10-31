@@ -319,9 +319,6 @@ void ATappyFowlPlayerController::CreateSessionKey(const FString& EngineSigner)
 		{},
 		TEXT("0"),
 		FDateTime::MinValue(),
-		FDateTime::MinValue(),
-		FDateTime::MinValue(),
-		FDateTime::MinValue(),
 		FStringDelegate::CreateUObject(this, &ATappyFowlPlayerController::HandleSessionKeyCreated),
 		CREATE_ERROR_DELEGATE(TEXT("HandleSmartWalletIsDeployed"))
 	);

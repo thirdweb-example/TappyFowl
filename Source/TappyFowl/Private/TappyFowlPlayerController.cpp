@@ -12,8 +12,6 @@
 #include "ThirdwebRuntimeSettings.h"
 #include "ThirdwebUtils.h"
 
-#include "Components/SlateWrapperTypes.h"
-
 #include "Containers/ThirdwebSigner.h"
 
 #include "Interfaces/IHttpResponse.h"
@@ -234,8 +232,7 @@ bool ATappyFowlPlayerController::AutoSignIn()
 	{
 		if (SaveGame->IsGuestAuth())
 		{
-			FInAppWalletHandle::CreateEcosystemGuestWallet(
-				TEXT(""),
+			FInAppWalletHandle::CreateGuestWallet(
 				FInAppWalletHandle::FCreateInAppWalletDelegate::CreateUObject(this, &ThisClass::HandleInAppWalletCreated),
 				CREATE_ERROR_DELEGATE(TEXT("AutoSignIn"))
 			);
@@ -342,7 +339,6 @@ void ATappyFowlPlayerController::FetchBalances()
 	{
 		return;
 	}
-	FHttpModule& HttpModule = FHttpModule::Get();
 	const TSharedRef<IHttpRequest> Request = TappyFowl::HTTP::Get(FString::Format(TEXT("/{0}/balances"), {GetSmartWallet().ToAddress()}));
 	Request->OnProcessRequestComplete().BindWeakLambda(this, [&](const FHttpRequestPtr&, const FHttpResponsePtr& Response, const bool bWasSuccessful)
 	{

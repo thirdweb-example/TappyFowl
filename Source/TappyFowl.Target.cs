@@ -10,7 +10,10 @@ public class TappyFowlTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.Latest;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
-
+		if (Target.Platform == UnrealTargetPlatform.Android)
+		{
+			bUseLoggingInShipping = true;
+		}
 		ExtraModuleNames.Add("TappyFowl");
 	}
 }

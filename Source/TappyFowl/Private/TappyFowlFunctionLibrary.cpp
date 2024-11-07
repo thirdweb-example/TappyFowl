@@ -8,6 +8,7 @@
 #include "PaperSprite.h"
 #include "PaperSpriteComponent.h"
 
+#include "Kismet/KismetStringLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 void UTappyFowlFunctionLibrary::PrintDevWarning(const UObject* WorldContextObject, const FText InText)
@@ -20,11 +21,31 @@ void UTappyFowlFunctionLibrary::PrintDevError(const UObject* WorldContextObject,
 	UKismetSystemLibrary::PrintText(WorldContextObject, InText, true, true, FLinearColor(1.0f, 0.037429f, 0.0f, 1.0f), 30.0f);
 }
 
+bool UTappyFowlFunctionLibrary::IsValidEmail(const FText& Email)
+{
+	return FRegexMatcher(FRegexPattern(TEXT("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")), Email.ToString()).FindNext();
+}
+
+bool UTappyFowlFunctionLibrary::OnlyNumeric(const FText& Input, FText& Output)
+{
+	TArray<FString> Characters = UKismetStringLibrary::GetCharacterArrayFromString(Input.ToString());
+	TArray<FString> Numeric;
+	for (const FString& Character : Characters)
+	{
+		if (Character.IsNumeric())
+		{
+			Numeric.Emplace(Character);
+		}
+	}
+	Output = FText::FromString(UKismetStringLibrary::JoinStringArray(Numeric, TEXT("")));
+	return !Input.ToString().Equals(Output.ToString());
+}
+
 UMaterialInstanceDynamic* UTappyFowlFunctionLibrary::CreateActorMaterialInstance(AActor* Actor,
-	UPaperSpriteComponent* Sprite,
-	UPaperFlipbookComponent* Flipbook,
-	UStaticMeshComponent* Static,
-	USkeletalMeshComponent* Skeletal)
+                                                                                 UPaperSpriteComponent* Sprite,
+                                                                                 UPaperFlipbookComponent* Flipbook,
+                                                                                 UStaticMeshComponent* Static,
+                                                                                 USkeletalMeshComponent* Skeletal)
 {
 	if (IsValid(Skeletal) && IsValid(Skeletal->GetSkinnedAsset()))
 	{

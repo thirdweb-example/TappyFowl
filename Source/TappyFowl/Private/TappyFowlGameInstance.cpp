@@ -2,6 +2,7 @@
 
 #include "TappyFowlGameInstance.h"
 
+#include "GameMapsSettings.h"
 #include "TappyFowl.h"
 #include "TappyFowlAssetManager.h"
 #include "TappyFowlSaveGame.h"
@@ -59,4 +60,30 @@ void UTappyFowlGameInstance::StartMusic(USoundBase* InMusic)
 	{
 		UGameplayStatics::PlaySound2D(this, Music);
 	}
+}
+
+void UTappyFowlGameInstance::SetInAppWallet(const FInAppWalletHandle& NewInAppWallet)
+{
+	InAppWallet = NewInAppWallet;
+	if (InAppWallet.IsValid() && InAppWallet.IsConnected())
+	{
+		InAppWallet.CacheAddress();
+	}
+}
+
+void UTappyFowlGameInstance::SetSmartWallet(const FSmartWalletHandle& NewSmartWallet)
+{
+	SmartWallet = NewSmartWallet;
+	if (SmartWallet.IsValid())
+	{
+		SmartWallet.CacheAddress();
+	}
+}
+
+void UTappyFowlGameInstance::Reset()
+{
+	InAppWallet.Invalidate();
+	SmartWallet.Invalidate();
+	BackgroundFetchHandle.Invalidate();
+	UGameplayStatics::OpenLevel(this, FName(UGameMapsSettings::GetGameDefaultMap()));
 }

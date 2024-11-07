@@ -5,6 +5,7 @@
 #include "TappyFowlAssetManager.h"
 #include "TappyFowlPlayerController.h"
 #include "TappyFowlSaveGame.h"
+#include "ThirdwebUtils.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -42,7 +43,7 @@ FText UPlayerViewModel::GetAddress() const
 {
 	if (ATappyFowlPlayerController* PlayerController = Cast<ATappyFowlPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)))
 	{
-		if (FWalletHandle Wallet = PlayerController->GetSmartWallet(); Wallet.IsValid())
+		if (FSmartWalletHandle Wallet = PlayerController->GetSmartWallet(); Wallet.IsValid())
 		{
 			return FText::FromString(Wallet.ToAddress());
 		}

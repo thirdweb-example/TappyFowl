@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "ThirdwebWalletHandle.h"
 
 #include "Engine/StreamableManager.h"
 
 #include "GameFramework/GameMode.h"
+
 #include "TappyFowlGameMode.generated.h"
 
 class ATappyFowlPlayerController;

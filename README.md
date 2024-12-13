@@ -43,7 +43,7 @@
 ### Cloning
 1. Clone the project
    ```powershell
-   git clone git@github.com:thirdweb-example/TappyFowl.git C:\Projects\UnrealEngine\TappyFowl
+   git clone https://github.com/thirdweb-example/TappyFowl.git C:\Projects\UnrealEngine\TappyFowl
    ```
 2. Create a Plugins folder inside the project
    ```powershell
